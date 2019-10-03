@@ -30,6 +30,14 @@ install_facebook = yes?("Do you want to install facebook (y/n)")
 gem 'omniauth-facebook' if install_facebook
 install_google = yes?("Do you want to install google (y/n)")
 gem 'omniauth-google-oauth2'
+install_whenever = yes?("Do you want to install whenever (y/n)")
+gem 'whenever' if install_whenever
+install_better_error = yes?("Do you want to install better error (y/n)")
+install_binding_of_caller = yes?("Do you want to install binding of caller (y/n)")
+gem_group :development do
+  gem 'better_errors' if install_better_error
+  gem "binding_of_caller" if install_binding_of_caller
+end if install_better_error || install_binding_of_caller
 
 after_bundle do
   run("spring stop")
