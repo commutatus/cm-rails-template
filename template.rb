@@ -24,12 +24,20 @@ install_spotlight_search = yes?("Do you want to install Spotlight? (y/n)")
 gem 'spotlight_search' if install_spotlight_search
 install_rails_best_practices = yes?("Do you want to install Rails best practice? (y/n)")
 gem 'rails_best_practices' if install_rails_best_practices
+install_omniauth = yes?("Do you want to install omniauth (y/n)")
+gem 'omniauth' if install_omniauth
+install_facebook = yes?("Do you want to install facebook (y/n)")
+gem 'omniauth-facebook' if install_facebook
+install_google = yes?("Do you want to install google (y/n)")
+gem 'omniauth-google-oauth2'
 
 after_bundle do
   run("spring stop")
 
   run("rails generate simple_form:install") if install_simple_form
   run("rails generate devise:install") if install_devise
+  insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
+                 after: "# config.sign_in_after_change_password = true\n"
   rails_command("db:migrate")
 end
 # generate(:scaffold, "person name:string")
