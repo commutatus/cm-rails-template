@@ -47,6 +47,10 @@ gem_group :development do
   gem 'better_errors' if install_better_error
   gem "binding_of_caller" if install_binding_of_caller
 end if install_better_error || install_binding_of_caller
+install_rollbar = yes?("Do you want to install rollbar (y/n)")
+gem 'rollbar' if install_rollbar
+install_scout = yes?("Do you want to install scout (y/n)")
+gem 'scout_apm' if install_scout
 
 after_bundle do
   run("spring stop")
@@ -55,6 +59,8 @@ after_bundle do
   run("rails generate devise:install") if install_devise
   run("rails generate devise user") if install_devise
   run("rails generate graphql:install") if install_graphql
+  run("rails generate rollbar") if install_rollbar
+  run("bundle exec wheneverize .") if install_whenever
   insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
                  after: "class ApplicationController < ActionController::Base\n"
   insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
@@ -68,6 +74,9 @@ after_bundle do
     field :auth_sign_up,                            resolver: Mutations::Auth::SignUp\n",
     after: "class MutationType < Types::BaseObject\n"
   inside 'app' do
+  	inside 'config' do
+  		copy_file 'sidekiq.yml'
+  	end
     inside 'graphql' do
       inside 'types' do
         inside 'objects' do
