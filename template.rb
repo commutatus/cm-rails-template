@@ -1,5 +1,11 @@
 # template.rb
 require 'byebug'
+
+def source_paths
+  Array(super) +
+    [File.join(File.expand_path(File.dirname(__FILE__)),'')]
+end
+
 install_pg = yes?("Do you want to install postgresql? (y/n)")
 gem 'pg' if install_pg
 install_devise = yes?("Do you want to install devise? (y/n)")
@@ -10,6 +16,8 @@ install_simple_form = yes?("Do you want to install Simple form? (y/n)")
 gem 'simple_form' if install_simple_form
 install_graphql = yes?("Do you want to install Graphql? (y/n)")
 gem 'graphql', github: 'commutatus/graphql-ruby' if install_graphql
+gem 'graphql-errors' if install_graphql
+gem 'graphql-rails_logger' if install_graphql
 install_rubocop = yes?("Do you want to install Rubocop? (y/n)")
 gem 'rubocop' if install_rubocop
 install_local_time = yes?("Do you want to install Local time? (y/n)")
@@ -35,6 +43,7 @@ gem 'whenever' if install_whenever
 install_better_error = yes?("Do you want to install better error (y/n)")
 install_binding_of_caller = yes?("Do you want to install binding of caller (y/n)")
 gem_group :development do
+  gem 'graphiql-rails' if install_graphql
   gem 'better_errors' if install_better_error
   gem "binding_of_caller" if install_binding_of_caller
 end if install_better_error || install_binding_of_caller
@@ -44,8 +53,57 @@ after_bundle do
 
   run("rails generate simple_form:install") if install_simple_form
   run("rails generate devise:install") if install_devise
+  run("rails generate devise user") if install_devise
+  run("rails generate graphql:install") if install_graphql
+  insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
+                 after: "class ApplicationController < ActionController::Base\n"
   insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
                  after: "# config.sign_in_after_change_password = true\n"
+  insert_into_file 'app/graphql/types/mutation_type.rb', "
+    field :auth_change_password,                    resolver: Mutations::Auth::ChangePassword\n
+    field :auth_confirm_email,                      resolver: Mutations::Auth::ConfirmEmail\n
+    field :auth_forgot_password,                    resolver: Mutations::Auth::ForgotPassword\n
+    field :auth_reset_password,                     resolver: Mutations::Auth::ResetPassword\n
+    field :auth_login,                              resolver: Mutations::Auth::Login\n
+    field :auth_sign_up,                            resolver: Mutations::Auth::SignUp\n",
+    after: "class MutationType < Types::BaseObject\n"
+  inside 'app' do
+    inside 'graphql' do
+      inside 'types' do
+        inside 'objects' do
+          copy_file 'date_time.rb'
+          copy_file 'api_key.rb'
+          inside 'user' do
+            copy_file 'base.rb'
+            copy_file 'current_user.rb'
+          end
+        end
+        inside 'inputs' do
+          inside 'auth' do
+            copy_file 'change_password.rb'
+            copy_file 'login.rb'
+            copy_file 'reset_password.rb'
+            copy_file 'sign_up.rb'
+          end
+        end
+      end
+      inside 'mutations' do
+        inside 'auth' do
+          copy_file 'change_password.rb'
+          copy_file 'confirm_email.rb'
+          copy_file 'forgot_password.rb'
+          copy_file 'login.rb'
+          copy_file 'reset_password.rb'
+          copy_file 'sign_up.rb'
+        end
+        copy_file 'auth_mutation_query_type.rb'
+        copy_file 'base_mutation.rb'
+      end
+    end
+  end
+  # inside 'app/controllers' do
+  #   copy_file 'graphql_controller.rb'
+  # end
   rails_command("db:migrate")
 end
 # generate(:scaffold, "person name:string")
