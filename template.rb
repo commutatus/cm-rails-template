@@ -80,9 +80,6 @@ after_bundle do
     field :auth_sign_up,                            resolver: Mutations::Auth::SignUp\n",
     after: "class MutationType < Types::BaseObject\n"
   inside 'app' do
-  	inside 'config' do
-  		copy_file 'sidekiq.yml'
-  	end
     inside 'graphql' do
       inside 'types' do
         inside 'objects' do
@@ -116,6 +113,9 @@ after_bundle do
       end
     end
   end
+  inside 'config' do
+		copy_file 'sidekiq.yml'
+	end
   # inside 'app/controllers' do
   #   copy_file 'graphql_controller.rb'
   # end
