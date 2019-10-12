@@ -5,7 +5,6 @@ def source_paths
   Array(super) +
     [File.join(File.expand_path(File.dirname(__FILE__)),'')]
 end
-
 install_pg = yes?("Do you want to install postgresql? (y/n)")
 gem 'pg' if install_pg
 install_devise = yes?("Do you want to install devise? (y/n)")
@@ -89,17 +88,22 @@ after_bundle do
       end
       inside 'mutations' do
         inside 'auth' do
-          copy_file 'change_password.rb'
-          copy_file 'confirm_email.rb'
-          copy_file 'forgot_password.rb'
-          copy_file 'login.rb'
-          copy_file 'reset_password.rb'
+          template 'change_password.erb', 'change_password.rb'
+          template 'confirm_email.erb', 'confirm_email.rb'
+          template 'forgot_password.erb', 'forgot_password.rb'
+          template 'login.erb', 'login.rb'
+          template 'reset_password.erb', 'reset_password.rb'
           copy_file 'sign_up.rb'
         end
-        copy_file 'auth_mutation_query_type.rb'
         copy_file 'base_mutation.rb'
       end
     end
+  end
+  inside 'lib' do
+    template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
+    # inside 'exceptions' do
+    #   copy_file 'failed_login.rb'
+    # end
   end
   # inside 'app/controllers' do
   #   copy_file 'graphql_controller.rb'

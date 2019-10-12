@@ -11,7 +11,7 @@ module Mutations
           user.find_or_generate_api_key
           user.live_api_key
         else
-          raise CivisApi::Exceptions::FailedLogin
+          raise <%= @app_name.classify %>::Exceptions::FailedLogin
         end
       end
     end
