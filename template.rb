@@ -60,6 +60,8 @@ after_bundle do
   run("rails generate simple_form:install") if install_simple_form
   run("rails generate devise:install") if install_devise
   run("rails generate devise user") if install_devise
+  run("rails generate migration add_default_field_to_user first_name:string last_name:string mobile_number:string") if install_devise
+  run("rails generate model api_key access_token:string expires_at:datetime active:boolean user:references") if install_graphql
   run("rails generate graphql:install") if install_graphql
   run("rails generate rollbar") if install_rollbar
   run("bundle exec wheneverize .") if install_whenever
