@@ -63,6 +63,8 @@ after_bundle do
   run("rails generate simple_form:install") if install_simple_form
   run("rails generate devise:install") if install_devise
   run("rails generate devise user") if install_devise
+  run("rails generate migration add_default_field_to_user first_name:string last_name:string mobile_number:string") if install_devise
+  run("rails generate model api_key access_token:string expires_at:datetime active:boolean user:references") if install_graphql
   run("rails generate graphql:install") if install_graphql
   run("rails generate rollbar") if install_rollbar
   run("bundle exec wheneverize .") if install_whenever
@@ -128,9 +130,6 @@ after_bundle do
 		end
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
-    # inside 'exceptions' do
-    #   copy_file 'failed_login.rb'
-    # end
   end
   # inside 'app/controllers' do
   #   copy_file 'graphql_controller.rb'
