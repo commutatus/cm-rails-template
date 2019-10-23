@@ -130,9 +130,6 @@ after_bundle do
 		end
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
-    # inside 'exceptions' do
-    #   copy_file 'failed_login.rb'
-    # end
   end
   # inside 'app/controllers' do
   #   copy_file 'graphql_controller.rb'
