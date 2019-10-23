@@ -50,9 +50,12 @@ install_rollbar = yes?("Do you want to install rollbar (y/n)")
 gem 'rollbar' if install_rollbar
 install_scout = yes?("Do you want to install scout (y/n)")
 gem 'scout_apm' if install_scout
+install_sidekiq = yes?("Do you want to install sidekiq (y/n)")
+gem 'sidekiq' if install_sidekiq
 install_jquery = yes?("Do you want to install jquery (y/n)")
 install_bootstrap = yes?("Do you want to install bootstrap (y/n)")
 install_select2 = yes?("Do you want to install select2 (y/n)")
+install_active_storage = yes?("Do you want to install activestorage (y/n)")
 
 after_bundle do
   run("spring stop")
@@ -65,9 +68,10 @@ after_bundle do
   run("rails generate graphql:install") if install_graphql
   run("rails generate rollbar") if install_rollbar
   run("bundle exec wheneverize .") if install_whenever
-  run ("yarn add jquery") if install_jquery
-  run ("yarn add bootstrap") if install_bootstrap
-  run ("yarn add select2") if install_select2
+  run("yarn add jquery") if install_jquery
+  run("yarn add bootstrap") if install_bootstrap
+  run("yarn add select2") if install_select2
+  run("rails active_storage:install") if install_active_storage
   insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
                  after: "class ApplicationController < ActionController::Base\n"
   insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
@@ -112,16 +116,24 @@ after_bundle do
         copy_file 'base_mutation.rb'
       end
     end
+    if install_active_storage
+    	inside 'models' do
+				inside 'concerns' do
+					copy_file 'attachments.rb'
+				end
+			end
+		end
   end
+  if install_sidekiq
+	  inside 'config' do
+			copy_file 'sidekiq.yml'
+		end
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
     # inside 'exceptions' do
     #   copy_file 'failed_login.rb'
     # end
   end
-  inside 'config' do
-		copy_file 'sidekiq.yml'
-	end
   # inside 'app/controllers' do
   #   copy_file 'graphql_controller.rb'
   # end
