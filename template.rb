@@ -84,6 +84,9 @@ after_bundle do
     field :auth_login,                              resolver: Mutations::Auth::Login\n
     field :auth_sign_up,                            resolver: Mutations::Auth::SignUp\n",
     after: "class MutationType < Types::BaseObject\n"
+  insert_into_file 'config/application.rb', "
+  config.autoload_paths << Rails.root.join('lib')
+  config.eager_load_paths << Rails.root.join('lib')", after: "config.load_defaults 6.0\n"
   inside 'app' do
     inside 'graphql' do
       inside 'types' do
@@ -116,6 +119,10 @@ after_bundle do
         copy_file 'base_mutation.rb'
       end
     end
+    inside 'models' do
+      copy_file 'api_key.rb'
+      copy_file 'user.rb'
+    end
     if install_active_storage
     	inside 'models' do
 				inside 'concerns' do
@@ -128,6 +135,7 @@ after_bundle do
 	  inside 'config' do
 			copy_file 'sidekiq.yml'
 		end
+  end
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
   end
