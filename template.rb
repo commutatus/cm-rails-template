@@ -36,11 +36,14 @@ gem 'omniauth' if install_omniauth
 install_facebook = yes?("Do you want to install facebook (y/n)")
 gem 'omniauth-facebook' if install_facebook
 install_google = yes?("Do you want to install google (y/n)")
-gem 'omniauth-google-oauth2'
+gem 'omniauth-google-oauth2' if install_google
 install_whenever = yes?("Do you want to install whenever (y/n)")
 gem 'whenever' if install_whenever
 install_better_error = yes?("Do you want to install better error (y/n)")
 install_binding_of_caller = yes?("Do you want to install binding of caller (y/n)")
+install_travis = yes?("Do you want to install travis? (y/n)")
+gem 'travis' if install_travis
+
 gem_group :development do
   gem 'graphiql-rails' if install_graphql
   gem 'better_errors' if install_better_error
@@ -87,6 +90,9 @@ after_bundle do
   insert_into_file 'config/application.rb', "
   config.autoload_paths << Rails.root.join('lib')
   config.eager_load_paths << Rails.root.join('lib')", after: "config.load_defaults 6.0\n"
+  copy_file '.gitignore-sample', '.gitignore'
+  copy_file 'travis-sample.yml', '.travis.yml' if install_travis
+  copy_file '.rollbar.sh' if install_travis
   inside 'app' do
     inside 'graphql' do
       inside 'types' do
@@ -118,6 +124,10 @@ after_bundle do
         end
         copy_file 'base_mutation.rb'
       end
+    end
+    inside 'mailers' do
+      copy_file 'application_mailer.rb'
+      copy_file 'user_mailer.rb'
     end
     inside 'models' do
       copy_file 'api_key.rb'

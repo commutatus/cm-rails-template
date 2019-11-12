@@ -18,4 +18,10 @@ class User < ApplicationRecord
     api_keys.live.each { |api_key| api_key.expire }
     api_keys.create
   end
+
+  def forgot_password_url(raw_token)
+    forgot_password_url = URI::HTTPS.build(Rails.application.config.client_url.merge!({ path: '/auth/reset-password', query: "reset_token=#{raw_token}"} ))
+    forgot_password_url.to_s
+  end
+
 end

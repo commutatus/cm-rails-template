@@ -1,0 +1,32 @@
+addons:
+  postgresql: '10'
+  apt:
+    packages:
+      - postgresql-server-dev-10
+language: ruby
+cache: bundler
+env:
+  - DB=postgresql
+before_script:
+  - psql -c 'create database travis_ci_test;' -U postgres
+  - cp config/database.yml.travis config/database.yml
+script:
+  - bundle exec rake db:test:prepare
+  - bundle exec rspec spec
+services:
+  - redis-server
+deploy:
+  - provider: cloud66
+    redeployment_hook: "https://replace.hook-url.com"
+    on:
+      branch: staging
+  - provider: cloud66
+    redeployment_hook: "https://replace.hook-url.com"
+    on:
+      branch: master
+after_deploy:
+  - ./.rollbar.sh succeeded
+branches:
+  only:
+    - master
+    - staging
