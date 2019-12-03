@@ -128,6 +128,7 @@ after_bundle do
 	  inside 'config' do
 			copy_file 'sidekiq.yml'
 		end
+  end
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
   end
