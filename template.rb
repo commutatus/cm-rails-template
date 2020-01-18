@@ -5,10 +5,16 @@ def source_paths
   Array(super) +
     [File.join(File.expand_path(File.dirname(__FILE__)),'')]
 end
+# Remove unwanted gems
+gsub_file "Gemfile", /^gem\s+["']sqlite3["'].*$/,''
+
+# Install required gems
 install_pg = yes?("Do you want to install postgresql? (y/n)")
 gem 'pg' if install_pg
 install_devise = yes?("Do you want to install devise? (y/n)")
 gem 'devise' if install_devise
+install_postmark = yes?("Do you want to install postmark? (y/n)")
+gem 'postmark-rails' if install_postmark
 install_slim = yes?("Do you want to install Slim? (y/n)")
 gem 'slim-rails' if install_slim
 install_simple_form = yes?("Do you want to install Simple form? (y/n)")
@@ -61,6 +67,7 @@ install_select2 = yes?("Do you want to install select2 (y/n)")
 install_active_storage = yes?("Do you want to install activestorage (y/n)")
 
 after_bundle do
+  template 'config/database.yml.erb', 'config/database.yml'
   run("spring stop")
 
   run("rails generate simple_form:install") if install_simple_form
@@ -152,6 +159,7 @@ after_bundle do
   # inside 'app/controllers' do
   #   copy_file 'graphql_controller.rb'
   # end
+  rails_command("db:create")
   rails_command("db:migrate")
 end
 # generate(:scaffold, "person name:string")
