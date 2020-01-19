@@ -11,7 +11,7 @@ class User < ApplicationRecord
   end
 
   def live_api_key
-        api_keys.live.last
+    api_keys.live.last
   end
 
   def generate_api_key

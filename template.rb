@@ -82,6 +82,9 @@ after_bundle do
   run("yarn add bootstrap") if install_bootstrap
   run("yarn add select2") if install_select2
   run("rails active_storage:install") if install_active_storage
+  insert_into_file 'config/environments/development.rb', "
+  Rails.application.routes.default_url_options[:host] = 'localhost:3000'
+  config.client_url = { host: 'localhost', port:3000, protocol: :https }\n", after: "config.file_watcher = ActiveSupport::EventedFileUpdateChecker\n"
   insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
                  after: "class ApplicationController < ActionController::Base\n"
   insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
@@ -147,6 +150,9 @@ after_bundle do
 				end
 			end
 		end
+    inside 'jobs' do
+      copy_file 'forgot_password_email_job.rb'
+    end
   end
   if install_sidekiq
 	  inside 'config' do
@@ -155,6 +161,9 @@ after_bundle do
   end
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
+  end
+  inside 'config/environments' do
+    copy_file 'staging.rb'
   end
   # inside 'app/controllers' do
   #   copy_file 'graphql_controller.rb'
