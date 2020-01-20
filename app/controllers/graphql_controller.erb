@@ -1,5 +1,5 @@
 class GraphqlController < ApplicationController
-  before_action :authenticate!, unless: :is_public
+  before_action :authenticate!
 
   def execute
     variables = ensure_hash(params[:variables])
@@ -11,7 +11,7 @@ class GraphqlController < ApplicationController
       # Query context goes here, for example:
       current_user: current_user
     }
-    result = GehnaSchema.execute(query, variables: variables, context: context, operation_name: operation_name)
+    result = <%= @app_name.classify + 'Schema'%>.execute(query, variables: variables, context: context, operation_name: operation_name)
     render json: result
   rescue => e
     raise e unless Rails.env.development?
@@ -19,19 +19,10 @@ class GraphqlController < ApplicationController
   end
 
   def authenticate!
-    raise Exceptions::Unauthorized.new("Access token invalid") unless current_user
-  end
-
-  def current_user
-    # find token. Check if valid.
-    if request.headers['Authorization']
-      api_key = ApiKey.valid.find_by(access_token: request.headers['Authorization'])
-      return false unless api_key.present?
-      @current_user = api_key.keyable
-      # @current_user.update_last_login unless @current_user.was_just_active?
-      @current_user
+    if current_user
+      return current_user
     else
-      false
+      return nil
     end
   end
 
@@ -54,8 +45,21 @@ class GraphqlController < ApplicationController
   rescue_from Exceptions::Unauthorized do |e|
     render json: {error: 'Unauthorized', message: e.message}, status: 401
   end
-  
+
   private
+
+  def current_user
+    # find token. Check if valid.
+    if request.headers['Authorization']
+      api_key = ApiKey.verify(request.headers['Authorization'])
+      return false unless api_key.present?
+      @current_user = api_key.user
+      # @current_user.update_last_activity unless @current_user.was_active_today?
+      @current_user
+    else
+      false
+    end
+  end
 
   # Handle form data, JSON body, or a blank value
   def ensure_hash(ambiguous_param)
@@ -82,17 +86,4 @@ class GraphqlController < ApplicationController
     render json: { error: { message: e.message, backtrace: e.backtrace }, data: {} }, status: 500
   end
 
-  def is_public
-    parsed_query = GraphQL::Query.new GehnaSchema, params[:query]
-    if parsed_query.selected_operation.present?
-      operation = parsed_query.selected_operation.selections.first.name
-      return true if operation == '__schema'
-      field = GehnaSchema.query.get_field(operation) || GehnaSchema.mutation.get_field(operation)
-      return true if field && field.metadata[:is_public] == true
-      false
-    else
-      raise ArgumentError, "Invalid input or no selections made on returning objects."
-    end
-  end
 end
-

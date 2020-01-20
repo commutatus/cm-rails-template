@@ -142,6 +142,7 @@ after_bundle do
     inside 'models' do
       copy_file 'api_key.rb'
       copy_file 'user.rb'
+      copy_file 'current.rb'
     end
     if install_active_storage
     	inside 'models' do
@@ -162,12 +163,17 @@ after_bundle do
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
   end
-  inside 'config/environments' do
-    copy_file 'staging.rb'
+  inside 'config' do
+    inside 'initializers' do
+      copy_file 'cors.rb'
+    end
+    inside 'environments' do
+      copy_file 'staging.rb'
+    end
   end
-  # inside 'app/controllers' do
-  #   copy_file 'graphql_controller.rb'
-  # end
+  inside 'app/controllers' do
+    template 'graphql_controller.erb', 'graphql_controller.rb'
+  end
   rails_command("db:create")
   rails_command("db:migrate")
 end
