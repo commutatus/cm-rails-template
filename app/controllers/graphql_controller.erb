@@ -7,9 +7,10 @@ class GraphqlController < ApplicationController
     operation_name = params[:operationName]
     Current.user = current_user
     Current.ip_address = request.ip
+    Current.user_agent = request.user_agent
     context = {
-      # Query context goes here, for example:
-      current_user: current_user
+      current_user: current_user,
+      access_token: request.headers['Authorization']
     }
     result = <%= @app_name.classify + 'Schema'%>.execute(query, variables: variables, context: context, operation_name: operation_name)
     render json: result
@@ -24,26 +25,6 @@ class GraphqlController < ApplicationController
     else
       return nil
     end
-  end
-
-  rescue_from ActiveRecord::RecordNotFound do |e|
-    render json: {error: 'RecordNotFound', message: e.message }, status: 404
-  end
-
-  rescue_from ActiveRecord::RecordInvalid do |e|
-    render json: {error: 'RecordInvalid', message: e.record.errors.full_messages.join }, status: 422
-  end
-
-  rescue_from ActiveRecord::StatementInvalid do |e|
-    render json: {error: 'StatementInvalid', message: e.message }, status: 422
-  end
-
-  rescue_from ActiveRecord::RecordNotUnique do |e|
-    render json: {error: 'RecordNotUnique', message: e.message }, status: 422
-  end
-
-  rescue_from Exceptions::Unauthorized do |e|
-    render json: {error: 'Unauthorized', message: e.message}, status: 401
   end
 
   private
@@ -85,5 +66,4 @@ class GraphqlController < ApplicationController
 
     render json: { error: { message: e.message, backtrace: e.backtrace }, data: {} }, status: 500
   end
-
 end

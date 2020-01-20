@@ -79,6 +79,7 @@ after_bundle do
   run("rails generate rollbar") if install_rollbar
   run("bundle exec wheneverize .") if install_whenever
   run("yarn add jquery") if install_jquery
+  run("yarn add coffeescript coffee-loader")
   run("yarn add bootstrap") if install_bootstrap
   run("yarn add select2") if install_select2
   run("rails active_storage:install") if install_active_storage
@@ -100,6 +101,9 @@ after_bundle do
   insert_into_file 'config/application.rb', "
   config.autoload_paths << Rails.root.join('lib')
   config.eager_load_paths << Rails.root.join('lib')", after: "config.load_defaults 6.0\n"
+  copy_file 'config/webpacker.yml'
+  copy_file 'config/webpack/environment.js'
+  copy_file 'config/webpack/loaders/coffee.js'
   copy_file '.gitignore-sample', '.gitignore'
   copy_file 'travis-sample.yml', '.travis.yml' if install_travis
   copy_file '.rollbar.sh' if install_travis
