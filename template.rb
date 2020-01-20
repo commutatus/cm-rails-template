@@ -5,10 +5,16 @@ def source_paths
   Array(super) +
     [File.join(File.expand_path(File.dirname(__FILE__)),'')]
 end
+# Remove unwanted gems
+gsub_file "Gemfile", /^gem\s+["']sqlite3["'].*$/,''
+
+# Install required gems
 install_pg = yes?("Do you want to install postgresql? (y/n)")
 gem 'pg' if install_pg
 install_devise = yes?("Do you want to install devise? (y/n)")
 gem 'devise' if install_devise
+install_postmark = yes?("Do you want to install postmark? (y/n)")
+gem 'postmark-rails' if install_postmark
 install_slim = yes?("Do you want to install Slim? (y/n)")
 gem 'slim-rails' if install_slim
 install_simple_form = yes?("Do you want to install Simple form? (y/n)")
@@ -36,11 +42,14 @@ gem 'omniauth' if install_omniauth
 install_facebook = yes?("Do you want to install facebook (y/n)")
 gem 'omniauth-facebook' if install_facebook
 install_google = yes?("Do you want to install google (y/n)")
-gem 'omniauth-google-oauth2'
+gem 'omniauth-google-oauth2' if install_google
 install_whenever = yes?("Do you want to install whenever (y/n)")
 gem 'whenever' if install_whenever
 install_better_error = yes?("Do you want to install better error (y/n)")
 install_binding_of_caller = yes?("Do you want to install binding of caller (y/n)")
+install_travis = yes?("Do you want to install travis? (y/n)")
+gem 'travis' if install_travis
+
 gem_group :development do
   gem 'graphiql-rails' if install_graphql
   gem 'better_errors' if install_better_error
@@ -58,6 +67,7 @@ install_select2 = yes?("Do you want to install select2 (y/n)")
 install_active_storage = yes?("Do you want to install activestorage (y/n)")
 
 after_bundle do
+  template 'config/database.yml.erb', 'config/database.yml'
   run("spring stop")
 
   run("rails generate simple_form:install") if install_simple_form
@@ -72,6 +82,9 @@ after_bundle do
   run("yarn add bootstrap") if install_bootstrap
   run("yarn add select2") if install_select2
   run("rails active_storage:install") if install_active_storage
+  insert_into_file 'config/environments/development.rb', "
+  Rails.application.routes.default_url_options[:host] = 'localhost:3000'
+  config.client_url = { host: 'localhost', port:3000, protocol: :https }\n", after: "config.file_watcher = ActiveSupport::EventedFileUpdateChecker\n"
   insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
                  after: "class ApplicationController < ActionController::Base\n"
   insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
@@ -84,6 +97,12 @@ after_bundle do
     field :auth_login,                              resolver: Mutations::Auth::Login\n
     field :auth_sign_up,                            resolver: Mutations::Auth::SignUp\n",
     after: "class MutationType < Types::BaseObject\n"
+  insert_into_file 'config/application.rb', "
+  config.autoload_paths << Rails.root.join('lib')
+  config.eager_load_paths << Rails.root.join('lib')", after: "config.load_defaults 6.0\n"
+  copy_file '.gitignore-sample', '.gitignore'
+  copy_file 'travis-sample.yml', '.travis.yml' if install_travis
+  copy_file '.rollbar.sh' if install_travis
   inside 'app' do
     inside 'graphql' do
       inside 'types' do
@@ -116,6 +135,15 @@ after_bundle do
         copy_file 'base_mutation.rb'
       end
     end
+    inside 'mailers' do
+      copy_file 'application_mailer.rb'
+      copy_file 'user_mailer.rb'
+    end
+    inside 'models' do
+      copy_file 'api_key.rb'
+      copy_file 'user.rb'
+      copy_file 'current.rb'
+    end
     if install_active_storage
     	inside 'models' do
 				inside 'concerns' do
@@ -123,6 +151,9 @@ after_bundle do
 				end
 			end
 		end
+    inside 'jobs' do
+      copy_file 'forgot_password_email_job.rb'
+    end
   end
   if install_sidekiq
 	  inside 'config' do
@@ -132,9 +163,18 @@ after_bundle do
   inside 'lib' do
     template 'exceptions/failed_login.erb', "#{@app_name}/exceptions/failed_login.rb"
   end
-  # inside 'app/controllers' do
-  #   copy_file 'graphql_controller.rb'
-  # end
+  inside 'config' do
+    inside 'initializers' do
+      copy_file 'cors.rb'
+    end
+    inside 'environments' do
+      copy_file 'staging.rb'
+    end
+  end
+  inside 'app/controllers' do
+    template 'graphql_controller.erb', 'graphql_controller.rb'
+  end
+  rails_command("db:create")
   rails_command("db:migrate")
 end
 # generate(:scaffold, "person name:string")
