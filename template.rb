@@ -55,6 +55,7 @@ gem_group :development do
   gem 'better_errors' if install_better_error
   gem "binding_of_caller" if install_binding_of_caller
 end if install_better_error || install_binding_of_caller
+
 install_rollbar = yes?("Do you want to install rollbar (y/n)")
 gem 'rollbar' if install_rollbar
 install_scout = yes?("Do you want to install scout (y/n)")
@@ -68,8 +69,8 @@ install_active_storage = yes?("Do you want to install activestorage (y/n)")
 
 after_bundle do
   template 'config/database.yml.erb', 'config/database.yml'
-  run("spring stop")
 
+  run("spring stop")
   run("rails generate simple_form:install") if install_simple_form
   run("rails generate devise:install") if install_devise
   run("rails generate devise user") if install_devise
@@ -178,7 +179,7 @@ after_bundle do
   inside 'app/controllers' do
     template 'graphql_controller.erb', 'graphql_controller.rb'
   end
-  rails_command("db:create")
+  rails_command("db:create")  
   rails_command("db:migrate")
 end
 # generate(:scaffold, "person name:string")

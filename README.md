@@ -10,3 +10,9 @@ rails new blog -m cm-rails-template/template.rb
 # If you want to create application in specific version
 rails _6.0.0.rc1_ new blog -m cm-rails-template/template.rb
 ```
+
+This template should help you setup the following gems
+
+- Devise
+- Grapqhl
+- Scout APM
