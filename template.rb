@@ -111,6 +111,12 @@ def install_graphql_dependencies
         copy_file 'base_mutation.rb'
       end
     end
+    inside 'models' do
+      inside 'concerns' do
+        copy_file 'filtered_list.rb'
+        copy_file 'paginator.rb'
+      end
+    end
   end
   insert_into_file 'app/graphql/types/mutation_type.rb', "
     field :auth_change_password,                    resolver: Mutations::Auth::ChangePassword\n
