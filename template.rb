@@ -55,6 +55,7 @@ gem_group :development do
   gem 'better_errors' if install_better_error
   gem "binding_of_caller" if install_binding_of_caller
 end if install_better_error || install_binding_of_caller
+
 install_rollbar = yes?("Do you want to install rollbar (y/n)")
 gem 'rollbar' if install_rollbar
 install_scout = yes?("Do you want to install scout (y/n)")
@@ -66,48 +67,19 @@ install_bootstrap = yes?("Do you want to install bootstrap (y/n)")
 install_select2 = yes?("Do you want to install select2 (y/n)")
 install_active_storage = yes?("Do you want to install activestorage (y/n)")
 
-after_bundle do
-  template 'config/database.yml.erb', 'config/database.yml'
-  run("spring stop")
+def install_devise_dependencies
+  run("rails generate devise:install")
+  run("rails generate devise user")
+  run("rails generate migration add_default_field_to_user first_name:string last_name:string mobile_number:string")
+end
 
-  run("rails generate simple_form:install") if install_simple_form
-  run("rails generate devise:install") if install_devise
-  run("rails generate devise user") if install_devise
-  run("rails generate migration add_default_field_to_user first_name:string last_name:string mobile_number:string") if install_devise
-  run("rails generate model api_key access_token:string expires_at:datetime active:boolean user:references") if install_graphql
-  run("rails generate graphql:install") if install_graphql
-  run("rails generate rollbar") if install_rollbar
-  run("bundle exec wheneverize .") if install_whenever
-  run("yarn add jquery") if install_jquery
-  run("yarn add coffeescript coffee-loader")
-  run("yarn add bootstrap") if install_bootstrap
-  run("yarn add select2") if install_select2
-  run("rails active_storage:install") if install_active_storage
-  insert_into_file 'config/environments/development.rb', "
-  Rails.application.routes.default_url_options[:host] = 'localhost:3000'
-  config.client_url = { host: 'localhost', port:3000, protocol: :https }\n", after: "config.file_watcher = ActiveSupport::EventedFileUpdateChecker\n"
-  insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
-                 after: "class ApplicationController < ActionController::Base\n"
-  insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
-                 after: "# config.sign_in_after_change_password = true\n"
-  insert_into_file 'app/graphql/types/mutation_type.rb', "
-    field :auth_change_password,                    resolver: Mutations::Auth::ChangePassword\n
-    field :auth_confirm_email,                      resolver: Mutations::Auth::ConfirmEmail\n
-    field :auth_forgot_password,                    resolver: Mutations::Auth::ForgotPassword\n
-    field :auth_reset_password,                     resolver: Mutations::Auth::ResetPassword\n
-    field :auth_login,                              resolver: Mutations::Auth::Login\n
-    field :auth_sign_up,                            resolver: Mutations::Auth::SignUp\n",
-    after: "class MutationType < Types::BaseObject\n"
-  insert_into_file 'config/application.rb', "
-  config.autoload_paths << Rails.root.join('lib')
-  config.eager_load_paths << Rails.root.join('lib')", after: "config.load_defaults 6.0\n"
-  copy_file 'config/webpacker.yml'
-  copy_file 'config/webpack/environment.js'
-  copy_file 'config/webpack/loaders/coffee.js'
-  copy_file '.gitignore-sample', '.gitignore'
-  copy_file 'travis-sample.yml', '.travis.yml' if install_travis
-  copy_file '.rollbar.sh' if install_travis
+def install_graphql_dependencies
+  run("rails generate model api_key access_token:string expires_at:datetime active:boolean user:references")
+  run("rails generate graphql:install")
   inside 'app' do
+    inside 'controllers' do
+      template 'graphql_controller.erb', 'graphql_controller.rb'
+    end
     inside 'graphql' do
       inside 'types' do
         inside 'objects' do
@@ -139,6 +111,53 @@ after_bundle do
         copy_file 'base_mutation.rb'
       end
     end
+    inside 'models' do
+      inside 'concerns' do
+        copy_file 'filtered_list.rb'
+        copy_file 'paginator.rb'
+      end
+    end
+  end
+  insert_into_file 'app/graphql/types/mutation_type.rb', "
+    field :auth_change_password,                    resolver: Mutations::Auth::ChangePassword\n
+    field :auth_confirm_email,                      resolver: Mutations::Auth::ConfirmEmail\n
+    field :auth_forgot_password,                    resolver: Mutations::Auth::ForgotPassword\n
+    field :auth_reset_password,                     resolver: Mutations::Auth::ResetPassword\n
+    field :auth_login,                              resolver: Mutations::Auth::Login\n
+    field :auth_sign_up,                            resolver: Mutations::Auth::SignUp\n",
+    after: "class MutationType < Types::BaseObject\n"
+end
+
+after_bundle do
+  template 'config/database.yml.erb', 'config/database.yml'
+  run("spring stop")
+  run("rails generate simple_form:install") if install_simple_form
+  install_devise_dependencies if install_devise
+  install_graphql_dependencies if install_graphql
+  run("rails generate rollbar") if install_rollbar
+  run("bundle exec wheneverize .") if install_whenever
+  run("yarn add jquery") if install_jquery
+  run("yarn add coffeescript coffee-loader")
+  run("yarn add bootstrap") if install_bootstrap
+  run("yarn add select2") if install_select2
+  run("rails active_storage:install") if install_active_storage
+  insert_into_file 'config/environments/development.rb', "
+  Rails.application.routes.default_url_options[:host] = 'localhost:3000'
+  config.client_url = { host: 'localhost', port:3000, protocol: :https }\n", after: "config.file_watcher = ActiveSupport::EventedFileUpdateChecker\n"
+  insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
+                 after: "class ApplicationController < ActionController::Base\n"
+  insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
+                 after: "# config.sign_in_after_change_password = true\n"
+  insert_into_file 'config/application.rb', "
+  config.autoload_paths << Rails.root.join('lib')
+  config.eager_load_paths << Rails.root.join('lib')", after: "config.load_defaults 6.0\n"
+  copy_file 'config/webpacker.yml'
+  copy_file 'config/webpack/environment.js'
+  copy_file 'config/webpack/loaders/coffee.js'
+  copy_file '.gitignore-sample', '.gitignore'
+  copy_file 'travis-sample.yml', '.travis.yml' if install_travis
+  copy_file '.rollbar.sh' if install_travis
+  inside 'app' do
     inside 'mailers' do
       copy_file 'application_mailer.rb'
       copy_file 'user_mailer.rb'
@@ -174,9 +193,6 @@ after_bundle do
     inside 'environments' do
       copy_file 'staging.rb'
     end
-  end
-  inside 'app/controllers' do
-    template 'graphql_controller.erb', 'graphql_controller.rb'
   end
   rails_command("db:create")
   rails_command("db:migrate")
