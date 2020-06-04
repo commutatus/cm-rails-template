@@ -66,6 +66,7 @@ install_jquery = yes?("Do you want to install jquery (y/n)")
 install_bootstrap = yes?("Do you want to install bootstrap (y/n)")
 install_select2 = yes?("Do you want to install select2 (y/n)")
 install_active_storage = yes?("Do you want to install activestorage (y/n)")
+install_fa = yes?("Do you want to install font-awesome. This is required in admin panel (y/n)")
 
 def install_devise_dependencies
   run("rails generate devise:install")
@@ -135,11 +136,13 @@ after_bundle do
   install_devise_dependencies if install_devise
   install_graphql_dependencies if install_graphql
   run("rails generate rollbar") if install_rollbar
+  run("rails generate spotlight_search:install") if install_rollbar
   run("bundle exec wheneverize .") if install_whenever
   run("yarn add jquery") if install_jquery
   run("yarn add coffeescript coffee-loader")
   run("yarn add bootstrap") if install_bootstrap
   run("yarn add select2") if install_select2
+  run("yarn add font-awesome") if install_fa
   run("rails active_storage:install") if install_active_storage
   insert_into_file 'config/environments/development.rb', "
   Rails.application.routes.default_url_options[:host] = 'localhost:3000'
@@ -147,13 +150,10 @@ after_bundle do
   insert_into_file 'app/controllers/application_controller.rb', "  protect_from_forgery\n",
                  after: "class ApplicationController < ActionController::Base\n"
   insert_into_file 'config/initializers/devise.rb', "\n  config.omniauth :facebook, '', ''\n",
-                 after: "# config.sign_in_after_change_password = true\n"
+                 after: "# config.sign_in_after_change_password = true\n" if install_facebook
   insert_into_file 'config/application.rb', "
   config.autoload_paths << Rails.root.join('lib')
   config.eager_load_paths << Rails.root.join('lib')", after: "config.load_defaults 6.0\n"
-  copy_file 'config/webpacker.yml'
-  copy_file 'config/webpack/environment.js'
-  copy_file 'config/webpack/loaders/coffee.js'
   copy_file '.gitignore-sample', '.gitignore'
   copy_file 'travis-sample.yml', '.travis.yml' if install_travis
   copy_file '.rollbar.sh' if install_travis
