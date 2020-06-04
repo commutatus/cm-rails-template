@@ -5,7 +5,7 @@ This template should help someone to install all dependent gem easily by asking 
 To create application using template
 
 ```
-rails new blog -m cm-rails-template/template.rb
+rails new blog -m https://raw.githubusercontent.com/commutatus/cm-rails-template/devise_integration/template.rb
 
 # If you want to create application in specific version
 rails _6.0.0.rc1_ new blog -m cm-rails-template/template.rb
